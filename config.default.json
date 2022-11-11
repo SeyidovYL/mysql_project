@@ -6,11 +6,13 @@
     "port": 3306
   },
   "Logger": {
-    "format": {
-      "message": "",
-      "date": "%Y-%m-%d %H:%M:%S"
+    "console": {
+      "format": "<green>{time}</green> <level>{message}</level>"
     },
-    "filename": "",
-    "path": "log"
+    "file": {
+      "path": "log",
+      "rotation": "5 MB",
+      "format": "{time} [{level}] {message}"
+    }
   }
 }
