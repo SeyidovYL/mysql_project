@@ -1,46 +1,59 @@
-import sys
+import sys, os
+
+from datetime import datetime
+from dynaconf import Dynaconf
+from pathlib import PurePath, Path
 
 from utils.Logger import Logger
-
-from configparser import RawConfigParser
 from mysql.connector import connect, Error
+
 
 class Application:
     def __init__(self, config_file):
-        self.logger = Logger()
-        self.config = RawConfigParser()
+        self.logger = Logger(__name__)
+        self.config = Dynaconf(
+            settings_file=[config_file],
+            environments=False
+        )
         try:
-            self.config.read(config_file)
-            self.__logger_config__()
-            self.connect = self.__db_connect__()
+            self.__logger_config__(
+                self.config.get('Logger', dict())
+            )
+            self.connect = self.__db_connect__(
+                self.config.get('MySQL', dict())
+            )
         except Exception as e:
-            self.logger.critical('Не удалось прочитать файл с настройками')
-            self.logger.critical(e)
+            self.logger.critical('Error', exc_info=True)
             sys.exit()
 
-    def __logger_config__(self):
-        config = self.config
-        if 'Logger' not in config:
-            return
-        config = config['Logger']
-        str_format = config.get('str_format', None)
-        date_format = config.get('date_format', None)
-        self.logger.setFormat(str_format, date_format)
-
-    def __db_connect__(self):
-        try:
-            db_host = self.config['MySQL']['host']
-            db_port = int(self.config['MySQL']['port'])
-            db_user = self.config['MySQL']['username']
-            db_pass = self.config['MySQL']['password']
-            with connect(
-                host=db_host, user=db_user, password=db_pass,
-                port=db_port) as connection:
-                self.logger.info('Соединение с базой данных выполнено')
-                return connection
-        except:
-            self.logger.critical('Ошибка соединения с базой данных')
+    def __logger_config__(self, config=dict()):
+        curr = Path(__file__).parent.resolve()
+        path = config.get('path', None)
+        if path:
+            curr = PurePath(curr, path)
+        filename = config.get('filename', None)
+        if filename:
+            filename = datetime.now().strftime(filename)
+            filename = PurePath(curr, filename)
+            try:
+                os.makedirs(curr, mode=0o755, exist_ok=True)
+            except:
+                filename = None
+        self.logger.format_date = config.get('format_date', None)
+        self.logger.format_message = config.get('format_message', None)
+        self.logger.filename = filename
+    def __db_connect__(self, config=dict()):
+        db_host = config.get('host')
+        db_port = int(config.get('port'))
+        db_user = config.get('username')
+        db_pass = config.get('password')
+        with connect(
+            host=db_host, user=db_user, password=db_pass,
+            port=db_port
+        ) as connection:
+            self.logger.info('Соединение с базой данных выполнено')
+            return connection
 
 
 if __name__ == '__main__':
-    app = Application('./config.ini')
+    app = Application('./config.json')

@@ -1,0 +1,16 @@
+{
+  "MySQL": {
+    "host": "",
+    "username": "",
+    "password": "",
+    "port": 3306
+  },
+  "Logger": {
+    "format": {
+      "message": "",
+      "date": "%Y-%m-%d %H:%M:%S"
+    },
+    "filename": "",
+    "path": "log"
+  }
+}
