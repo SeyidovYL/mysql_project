@@ -3,7 +3,8 @@
     "host": "",
     "username": "",
     "password": "",
-    "port": 3306
+    "port": 3306,
+    "table": ""
   },
   "Logger": {
     "console": {

@@ -1,40 +1,35 @@
 import sys
 
 from dynaconf import Dynaconf
-from utils.Logger import Logger
-from mysql.connector import connect, Error
+from packages.utils import Logger
+from packages.abstract import Connection
+from packages.services import *
+from packages.services import __meta__ as service_meta
 
 
 class Application:
     def __init__(self, config_file):
-        self.config = Dynaconf(
+        config = Dynaconf(
             settings_file=[config_file],
             environments=False
         )
-        logger_config = self.config.get('Logger')
-        self.logger = Logger(logger_config)
+        Logger.config(config.get('Logger'))
         try:
-            self.connect = self.__db_connect__(
-                self.config.get('MySQL', dict())
-            )
+            Connection.connect(config.get('MySQL', dict()))
+            Logger.info('Соединение с базой данных выполнено')
+            for model in service_meta:
+                model.metadata.create_all(Connection.get_instance())
+            Logger.info('Все модели созданы')
         except Exception as e:
-            self.logger.exception(e)
-            sys.exit()
-
-    def __db_connect__(self, config=None):
-        if not config:
-            raise Exception('Не найдена конфигурация базы данных')
-        db_host = config.get('host')
-        db_port = int(config.get('port'))
-        db_user = config.get('username')
-        db_pass = config.get('password')
-        with connect(
-            host=db_host, user=db_user, password=db_pass,
-            port=db_port
-        ) as connection:
-            self.logger.info('Соединение с базой данных выполнено')
-            return connection
+            Logger.exception(e)
+            raise e
+    def run(self):
+        Logger.info('Запуск приложения')
 
 
 if __name__ == '__main__':
-    app = Application('./config.json')
+    try:
+        app = Application('./config.json')
+        app.run()
+    except:
+        sys.exit()

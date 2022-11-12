@@ -15,14 +15,15 @@ class Logger:
     error = logger.error
     exception = logger.opt(exception=True).critical
 
-    def __init__(self, config=None):
+    @staticmethod
+    def config(config=None):
         if not config:
             return
         console = config.get('console')
         file = config.get('file', dict())
         if console:
             logger.remove()
-            console_config = self.__config.copy()
+            console_config = Logger.__config.copy()
             _format = console.get('format')
             if _format:
                 console_config['format'] = _format
@@ -32,7 +33,7 @@ class Logger:
             path = file.get('path')
             if not path:
                 return
-            console_config = self.__config.copy()
+            console_config = Logger.__config.copy()
             _format = file.get('format')
             if _format:
                 console_config['format'] = _format
@@ -47,3 +48,4 @@ class Logger:
                 **console_config,
                 filter=lambda record: record['level'].name in ['ERROR', 'CRITICAL']
             )
+
